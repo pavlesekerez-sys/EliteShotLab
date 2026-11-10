@@ -690,22 +690,36 @@ private fun AICoachScreen(modifier: Modifier = Modifier) {
                 if(input.isNotBlank()) {
                     val question = input.trim()
                     val q = question.lowercase()
-                    val shotIds = listOf("back", "front", "middle", "form")
-                    val madeToday = shotIds.sumOf { coachPrefs.getString("makes|" + today + "|shooting|" + it, "")?.toIntOrNull() ?: 0 }
-                    val attemptsToday = shotIds.sumOf { coachPrefs.getString("attempts|" + today + "|shooting|" + it, "")?.toIntOrNull() ?: 0 }
-                    val shotSummary = if (attemptsToday > 0) " Tvoj današnji unos: $madeToday/$attemptsToday pogodaka." else " Još nema današnjeg unosa šuteva u Workout delu."
-                    val answer = if (energy <= 2f || soreness >= 4f) {
-                        "Danas je prioritet oporavak. Energija: ${energy.toInt()}/5, zategnutost: ${soreness.toInt()}/5. Nemoj dodavati naporan rad preko svoja dva individualna treninga; reci treneru kako se osećaš i dogovorite opterećenje." + shotSummary
-                    } else when {
-                        listOf("procenat", "šut", "sut", "izbačaj", "izbacaj").any { q.contains(it) } || topic == "SHOOTING" ->
-                            "OFFLINE SAVET ZA ŠUT\nBeleži pogotke i pokušaje odvojeno za svaku vrstu šuta. Radi na balansu pri zaustavljanju, ponovljivom ritmu i istom završetku izbačaja. Upoređuj više treninga, ne samo jedan dan. " + if (q.contains("procenat") || q.contains("statistik")) "U Progress delu možeš da pratiš procenat i trend." else "Probaj da prepoznaš da li promašaji dolaze iz balansa, umora ili brzine izbačaja."
-                        listOf("dribling", "lopta", "crossover").any { q.contains(it) } || topic == "HANDLING" ->
-                            "OFFLINE SAVET ZA DRIBLING\nRadi kontrolisano obe ruke, glavu drži podignutu i ubrzaj tek nakon promene pravca. U igri čitaj položaj stopala i kukova čuvara; izaberi jednostavan potez koji odgovara njegovoj reakciji."
-                        listOf("završ", "polag", "reverse", "euro", "zicer").any { q.contains(it) } || topic == "FINISHING" ->
-                            "OFFLINE SAVET ZA ZAVRŠAVANJE\nVežbaj obe strane i obe ruke uz kontrolisane korake i stabilno doskakanje. Prvo kvalitet tehnike, pa tek onda brzina. Ne forsiraj kontakt."
+                    val isStats = listOf("procenat", "statistik", "koliko sam", "pogodaka", "pokusaja", "pokušaja", "rezultat", "napredak").any { q.contains(it) }
+                    val isShooting = listOf("sut", "šut", "izbacaj", "izbačaj", "pull-up", "pull up", "troj", "slobodn", "suters", "šuters", "shoot").any { q.contains(it) }
+                    val isHandling = listOf("dribling", "vođenje", "vodjenje", "lopta", "crossover", "cross", "hesi", "handle").any { q.contains(it) }
+                    val isFinishing = listOf("završ", "zavrs", "polag", "reverse", "eurostep", "zicer", "layup", "flouter", "floater").any { q.contains(it) }
+                    val isGameIq = listOf("odbran", "pick", "roll", "dodav", "pas", "čitam", "citam", "igru", "utakmic", "napad", "prostor", "čuvar", "cuvar").any { q.contains(it) }
+                    val isRecovery = listOf("umor", "oporav", "boli", "bol", "zategnut", "energij", "odmor").any { q.contains(it) }
+                    val answer = when {
+                        listOf("zdravo", "cao", "ćao", "hej", "hello").any { q.startsWith(it) } ->
+                            "Ćao! Tu sam. Možemo da pričamo o šutu, driblingu, završavanju, taktici ili tvom treningu. Šta želiš prvo da unaprediš?"
+                        isStats -> {
+                            val shotIds = listOf("back", "front", "middle", "form")
+                            val made = shotIds.sumOf { coachPrefs.getString("makes|" + today + "|shooting|" + it, "")?.toIntOrNull() ?: 0 }
+                            val attempts = shotIds.sumOf { coachPrefs.getString("attempts|" + today + "|shooting|" + it, "")?.toIntOrNull() ?: 0 }
+                            if (attempts > 0) "Danas si uneo " + made + " pogodaka iz " + attempts + " pokušaja (" + "%.1f".format(made * 100f / attempts) + "%). Uporedi ovaj rezultat sa prethodnim treninzima i gledaj trend, ne samo jedan dan."
+                            else "Još nemaš unete pogotke i pokušaje za danas. U Workout delu unesi oba broja za svaku vežbu šuta, pa ću moći da komentarišem tvoju statistiku."
+                        }
+                        isRecovery ->
+                            if (energy <= 2f || soreness >= 4f) "Po današnjem check-in-u energija ti je " + energy.toInt() + "/5, a zategnutost " + soreness.toInt() + "/5. Pošto već imaš dva individualna treninga, nemoj dodavati naporan rad. Reci treneru kako se osećaš i dogovorite opterećenje i oporavak."
+                            else "Za oporavak su važni san, redovni obroci, tečnost i dani lakšeg rada. Pošto imaš dva individualna treninga, dodatno opterećenje uskladi sa trenerom. Kako se danas osećaš posle treninga?"
+                        isShooting ->
+                            "Kod pull-up šuta ključni su ritam i zaustavljanje. Na promeni pravca prvo spusti težište, zatim se zaustavi u balansu tako da kukovi i ramena budu usmereni ka košu. Ne žuri izbačaj: uhvati loptu u isti položaj svaki put i završi pokret bez naginjanja unazad. Šta ti je najveći problem — pravljenje prostora, zaustavljanje ili sam izbačaj?"
+                        isHandling ->
+                            "Za bolji dribling gledaj da promena pravca bude praćena promenom brzine. Priđi čuvaru kontrolisano, navedi ga da prebaci težinu na jednu stranu, pa napadni slobodan prostor. Drži loptu nisko kada si pod pritiskom i podigni pogled pre poteza. Koji potez ti najčešće ne uspeva u igri?"
+                        isFinishing ->
+                            "Kod završavanja prvo pročitaj gde je pomoćni defanzivac. Ako ti zatvara direktan put, uspori na trenutak i izaberi završnicu koja te drži dalje od njegovog tela; ako je prostor otvoren, završi jednostavno i u balansu. Vežbaj obe strane i obe ruke uz kontrolu. Da li ti je teže završavanje levom rukom, desnom ili kada je protivnik blizu?"
+                        isGameIq ->
+                            "Pre nego što primiš loptu, skeniraj teren: gde je tvoj čuvar, odakle dolazi pomoć i ko je slobodan. U pick-and-roll situaciji ne odlučuj unapred — pročitaj da li odbrana preuzima, ostaje nisko ili šalje pomoć, pa izaberi dodavanje, prodor ili šut. Opiši mi jednu situaciju iz utakmice pa ćemo je zajedno analizirati."
                         else ->
-                            "OFFLINE GAME IQ SAVET\nPre prijema lopte skeniraj teren: položaj čuvara, pomoć odbrane i slobodan prostor. Kod pick-and-roll situacije prvo pročitaj reakciju odbrane, pa odluči između dodavanja, prodora ili šuta. Zapiši jednu situaciju koju želiš da prođeš sa trenerom."
-                    } + shotSummary
+                            "Hoću da ti odgovorim konkretno, ali nisam siguran na šta tačno misliš. Pitaj me o šutu, driblingu, završavanju, taktici ili treningu — ili izaberi temu iznad i napiši šta ti se dešava na terenu."
+                    }
                     messages=messages+CoachMessage(question,false)+CoachMessage(answer,true)
                     input=""
                 }
