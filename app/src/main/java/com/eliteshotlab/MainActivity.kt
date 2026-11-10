@@ -212,33 +212,70 @@ private data class WorkoutPlan(
 private fun WorkoutScreen(modifier: Modifier = Modifier) {
     val workouts = listOf(
         WorkoutPlan(
-            "Pull-up Mid-Range", "45–60 MIN", "Footwork • Balance • Shot consistency",
+            "Shot Creation", "40–50 MIN", "Mid-range • Pull-ups • Balance • Repeatable mechanics",
             listOf(
-                WorkoutExercise("Dynamic warm-up", "5–7 min", "Move smoothly and prepare your ankles, hips and shoulders."),
-                WorkoutExercise("Form shooting", "3 × 10 makes", "Start close to the basket; keep your elbow and follow-through consistent."),
-                WorkoutExercise("1–2 pull-up footwork", "4 × 5 each side", "Practice stopping under control before every shot."),
-                WorkoutExercise("Dribble into pull-up", "5 × 5 each side", "Stay balanced and land under control. Focus on quality, not speed."),
-                WorkoutExercise("Free throws", "2 × 10 shots", "Use the same routine before every attempt.")
+                WorkoutExercise("Dynamic movement warm-up", "5 min", "Easy movement, ankle and hip mobility, then relaxed close-range shots."),
+                WorkoutExercise("One-hand form shooting", "2 × 8 makes", "Start close. Keep the shooting elbow comfortably under the ball and finish with a relaxed follow-through."),
+                WorkoutExercise("1-dribble elbow pull-up", "3 × 5 makes each side", "Attack one step to the elbow, stop balanced and rise without drifting."),
+                WorkoutExercise("Cross-to-pull-up", "3 × 4 makes each direction", "Sell the crossover with your shoulders, gather cleanly and shoot from a balanced base."),
+                WorkoutExercise("Hesitation pull-up", "3 × 4 makes each side", "Change pace first; keep the hesitation compact, then stop under control."),
+                WorkoutExercise("Retreat dribble into space", "2 × 4 makes each side", "Create a little separation with a controlled retreat, re-square and shoot only when balanced."),
+                WorkoutExercise("Side-step jumper", "2 × 4 makes each side", "Move laterally into space without fading away; land under control."),
+                WorkoutExercise("Free throws with routine", "2 × 5 makes", "Use the same calm routine each time and track makes, not rushed attempts.")
             )
         ),
         WorkoutPlan(
-            "Ball Handling", "25–35 MIN", "Control • Both hands • Change of pace",
+            "Ball Handling", "35–45 MIN", "Tight control • Change of pace • Separation • Both hands",
             listOf(
-                WorkoutExercise("Stationary pound dribbles", "3 × 30 sec each hand", "Keep your eyes up and the ball below your waist."),
-                WorkoutExercise("Crossovers", "3 × 20 reps", "Move the ball quickly while keeping your body balanced."),
-                WorkoutExercise("Between-the-legs", "3 × 15 reps", "Stay low and make each transfer controlled."),
-                WorkoutExercise("Moving change of pace", "4 × down and back", "Change speed after the move; keep control of the ball."),
-                WorkoutExercise("Weak-hand control", "3 × 45 sec", "Give your weaker hand focused, controlled repetitions.")
+                WorkoutExercise("Dynamic warm-up with the ball", "4 min", "Move around the court at an easy pace, switching hands and keeping your eyes up."),
+                WorkoutExercise("Pound dribble series", "2 × 30 sec each hand", "Use your fingertips, a strong controlled bounce and a relaxed upper body."),
+                WorkoutExercise("In-and-out to burst", "3 × 5 each hand", "Sell the direction with your shoulder; push into open space only after the fake."),
+                WorkoutExercise("Crossover — low and wide", "3 × 8 each direction", "Move the ball across your body quickly while your hips and shoulders stay balanced."),
+                WorkoutExercise("Between-legs to attack", "3 × 5 each direction", "Keep the transfer tight, then take your first step into the open lane."),
+                WorkoutExercise("Behind-back protection", "2 × 6 each direction", "Keep the ball close to your hips and use the move to protect it, not just for style."),
+                WorkoutExercise("Hesitation — slow to fast", "4 × down and back", "Approach under control, briefly change rhythm, then accelerate into space."),
+                WorkoutExercise("Combo: cross → between → go", "3 × 4 each side", "Keep the combination compact. If control breaks, slow down and rebuild it."),
+                WorkoutExercise("Cone/line 1-on-1 attack", "4 × 20 sec", "Imagine a defender at the marker: read the space, make one decisive move and get past the line.")
             )
         ),
         WorkoutPlan(
-            "Finishing at Rim", "30–40 MIN", "Touch • Both sides • Body control",
+            "Finishing", "35–45 MIN", "Both hands • Angles • Soft touch • Finishing choices",
             listOf(
-                WorkoutExercise("Mikan drill", "3 × 10 makes", "Alternate hands and finish softly off the glass."),
-                WorkoutExercise("Right-hand layups", "3 × 8 makes", "Take a balanced approach and use the correct footwork."),
-                WorkoutExercise("Left-hand layups", "3 × 8 makes", "Work patiently on your weaker side."),
-                WorkoutExercise("Two-foot power finishes", "3 × 6 makes", "Gather securely, jump under control and finish high."),
-                WorkoutExercise("Free throws", "2 × 10 shots", "Reset your routine and breathing between attempts.")
+                WorkoutExercise("Dynamic warm-up", "5 min", "Prepare with easy movement and a few relaxed layups on both sides."),
+                WorkoutExercise("Mikan series", "2 × 8 makes", "Alternate hands around the rim. Use soft touch and stay balanced."),
+                WorkoutExercise("Weak-side layups", "3 × 5 makes each side", "Use the appropriate hand and footwork. Look at the target on the backboard."),
+                WorkoutExercise("Reverse layups", "2 × 5 makes each side", "Use the rim as protection and finish softly on the far side."),
+                WorkoutExercise("Stride-stop two-foot finish", "3 × 4 makes", "Gather under control, land balanced on two feet and finish without rushing."),
+                WorkoutExercise("Floater from the lane", "3 × 5 makes", "Use a soft, high release from a comfortable distance before the defender arrives."),
+                WorkoutExercise("Euro-step footwork progression", "2 × 4 each direction", "First rehearse the steps slowly without a shot; add the finish only when the footwork is controlled."),
+                WorkoutExercise("Drive read: layup or floater", "3 × 4 each side", "Use a cone or a partner's stationary hand as a visual cue and choose the finish that fits the space."),
+                WorkoutExercise("Free throws", "2 × 5 makes", "Take a short reset between attempts and keep the same routine.")
+            )
+        ),
+        WorkoutPlan(
+            "Footwork & Separation", "30–40 MIN", "Stops • Pivots • First step • Creating space",
+            listOf(
+                WorkoutExercise("Movement preparation", "5 min", "Easy skips, lateral steps and controlled deceleration."),
+                WorkoutExercise("Jump stop and balance", "3 × 5 reps", "Land softly on two feet, knees comfortably bent, and hold your balance."),
+                WorkoutExercise("Stride stop both directions", "3 × 5 reps", "Practice stopping from a light jog without extra steps or leaning."),
+                WorkoutExercise("Front and reverse pivots", "2 × 6 each foot", "Keep the pivot foot planted and turn under control."),
+                WorkoutExercise("Jab step to first step", "3 × 5 each side", "Make the jab believable, stay balanced and push into the open lane."),
+                WorkoutExercise("V-cut into catch position", "3 × 5 reps", "Change direction sharply but under control, then show your hands ready."),
+                WorkoutExercise("Retreat and re-attack", "3 × 4 each side", "Create space with a retreat dribble, reset your feet and attack a new angle."),
+                WorkoutExercise("Footwork into pull-up", "2 × 4 each side", "Combine a clean stop with a balanced mid-range shot.")
+            )
+        ),
+        WorkoutPlan(
+            "Game Moves", "35–45 MIN", "Read the defender • Choose a move • Finish or pull-up",
+            listOf(
+                WorkoutExercise("Dynamic warm-up", "5 min", "Prepare with easy movement, ball control and close-range finishes."),
+                WorkoutExercise("Attack from triple threat", "3 × 4 each side", "Start balanced, read the imaginary defender and choose a jab, drive or shot."),
+                WorkoutExercise("Closeout read: drive or shoot", "3 × 5 reps", "Use a cone as a visual defender: attack open space or take a balanced shot."),
+                WorkoutExercise("Crossover into rim finish", "3 × 4 each side", "Make one controlled move, get your shoulder past the marker and finish with the correct hand."),
+                WorkoutExercise("Hesitation into pull-up", "3 × 4 each side", "Change pace, stop under control and rise vertically for the mid-range shot."),
+                WorkoutExercise("Retreat dribble counter", "2 × 4 each side", "When the lane feels crowded, retreat to space and choose a new angle."),
+                WorkoutExercise("Two-choice finishing", "3 × 4 reps", "Alternate a layup and a floater based on the space in front of the rim."),
+                WorkoutExercise("Pressure free throws", "2 × 5 makes", "Take your time and use the same routine you use in practice.")
             )
         )
     )
@@ -250,6 +287,7 @@ private fun WorkoutScreen(modifier: Modifier = Modifier) {
         }
     }
     val completedCount = completed.count { it }
+    val categoryLabels = listOf("SHOT", "HANDLE", "FINISH", "FOOTWORK", "GAME")
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -261,19 +299,19 @@ private fun WorkoutScreen(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(8.dp))
             Text("YOUR WORKOUT", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Black)
             Spacer(Modifier.height(6.dp))
-            Text("Choose a session and tick off each exercise as you complete it.", color = Muted, fontSize = 13.sp)
+            Text("Five focused sessions to build skills that transfer to the game.", color = Muted, fontSize = 13.sp)
         }
         item {
             SectionTitle("CHOOSE YOUR SESSION")
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                listOf("SHOOTING", "HANDLING", "FINISHING").forEachIndexed { index, label ->
+                categoryLabels.forEachIndexed { index, label ->
                     FilterChip(
                         selected = selectedWorkoutIndex == index,
                         onClick = { selectedWorkoutIndex = index },
-                        label = { Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text(label, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1) },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF392416),
