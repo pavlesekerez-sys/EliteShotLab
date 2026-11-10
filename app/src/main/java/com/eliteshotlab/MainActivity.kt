@@ -246,7 +246,7 @@ private fun WorkoutScreen(modifier: Modifier = Modifier) {
     var revision by remember { mutableIntStateOf(0) }
     val plan = plans[selectedIndex]
     val date = todayKey()
-    val completed = plan.exercises.mapIndexed { i, _ -> prefs.getBoolean("check|" + date + "|" + plan.id + "|" + i, false) }
+    val completed = remember(revision, selectedIndex, date) { plan.exercises.mapIndexed { i, _ -> prefs.getBoolean("check|" + date + "|" + plan.id + "|" + i, false) } }
     val count = completed.count { it }
     val doneKey = "done|" + date + "|" + plan.id
 
