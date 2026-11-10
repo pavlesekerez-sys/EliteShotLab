@@ -96,7 +96,7 @@ private fun EliteShotLabApp() {
                 AppTab.TRAINING -> WorkoutScreen(Modifier.padding(padding))
                 AppTab.CALENDAR -> CalendarScreen(Modifier.padding(padding))
                 AppTab.AI_COACH -> AICoachScreen(Modifier.padding(padding))
-                AppTab.PROGRESS -> SimpleScreen("PROGRESS", "Track shots, workouts and improvement.", Modifier.padding(padding))
+                AppTab.PROGRESS -> ProgressScreen(Modifier.padding(padding))
                 AppTab.SETTINGS -> SimpleScreen("SETTINGS", "Your profile and app preferences.", Modifier.padding(padding))
             }
         }
@@ -397,6 +397,193 @@ private fun CalendarScreen(modifier: Modifier = Modifier) {
         }
     }
 }
+
+
+private data class ProgressShot(val id: String, val label: String)
+private val progressShots = listOf(
+    ProgressShot("back", "Back change → pull-up"),
+    ProgressShot("front", "Front change → pull-up"),
+    ProgressShot("middle", "Middle change → pull-up"),
+    ProgressShot("form", "Shooting form")
+)
+
+private fun progressDateKey(calendar: Calendar): String =
+    "%04d-%02d-%02d".format(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH))
+
+@Composable
+private fun ProgressScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("elite_shot_lab_training", android.content.Context.MODE_PRIVATE) }
+    var period by remember { mutableStateOf("WEEK") }
+    var selectedDate by remember { mutableStateOf<String?>(null) }
+    var refresh by remember { mutableIntStateOf(0) }
+    val today = Calendar.getInstance()
+    val daysToShow = if (period == "WEEK") 7 else 30
+    val start = (today.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -(daysToShow - 1)) }
+    val dateKeys = (0 until daysToShow).map { i ->
+        (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, i) }.let { progressDateKey(it) }
+    }
+    val allKeys = prefs.all.keys
+    val completedSessions = allKeys.filter { it.startsWith("done|") && prefs.getBoolean(it, false) }
+    val sessionDates = completedSessions.mapNotNull { it.split("|").getOrNull(1) }.toSet()
+    val periodSessions = sessionDates.count { it in dateKeys }
+    val shotTotals = progressShots.associate { shot ->
+        val makes = dateKeys.sumOf { date -> prefs.getString("makes|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0 }
+        val attempts = dateKeys.sumOf { date -> prefs.getString("attempts|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0 }
+        shot.id to (makes to attempts)
+    }
+    val totalMakes = shotTotals.values.sumOf { it.first }
+    val totalAttempts = shotTotals.values.sumOf { it.second }
+    val overallPercent = if (totalAttempts > 0) totalMakes * 100f / totalAttempts else 0f
+    val finishChecks = allKeys.count { key ->
+        key.startsWith("check|") && key.contains("|finishing|") &&
+            key.split("|").getOrNull(1) in dateKeys && prefs.getBoolean(key, false)
+    }
+    val handleChecks = allKeys.count { key ->
+        key.startsWith("check|") && key.contains("|handle|") &&
+            key.split("|").getOrNull(1) in dateKeys && prefs.getBoolean(key, false)
+    }
+    val latestReadinessDate = allKeys.filter { it.startsWith("readiness|") }
+        .mapNotNull { it.split("|").getOrNull(1) }.filter { it <= progressDateKey(today) }.maxOrNull()
+    val latestEnergy = latestReadinessDate?.let { prefs.getInt("readiness|" + it + "|energy", -1) } ?: -1
+    val latestSoreness = latestReadinessDate?.let { prefs.getInt("readiness|" + it + "|soreness", -1) } ?: -1
+    val historyDates = (sessionDates + allKeys.filter { it.startsWith("makes|") || it.startsWith("attempts|") }
+        .mapNotNull { it.split("|").getOrNull(1) }).distinct().sortedDescending().take(10)
+
+    LazyColumn(
+        modifier.fillMaxSize().padding(horizontal = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(13.dp),
+        contentPadding = PaddingValues(top = 22.dp, bottom = 28.dp)
+    ) {
+        item {
+            Text("ELITE SHOT LAB", color = Orange, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+            Spacer(Modifier.height(7.dp))
+            Text("YOUR PROGRESS", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Black)
+            Text("Real numbers from the extra work you record.", color = Muted, fontSize = 12.sp)
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("WEEK", "MONTH").forEach { option ->
+                    FilterChip(
+                        selected = period == option,
+                        onClick = { period = option; selectedDate = null; refresh++ },
+                        label = { Text(if (option == "WEEK") "LAST 7 DAYS" else "LAST 30 DAYS", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF392416), selectedLabelColor = Orange, labelColor = Muted)
+                    )
+                }
+                IconButton(onClick = { refresh++ }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = Orange) }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                StatCard("SESSIONS", periodSessions.toString(), if (period == "WEEK") "Last 7 days" else "Last 30 days", Modifier.weight(1f))
+                StatCard("SHOT %", if (totalAttempts > 0) "%.1f%%".format(overallPercent) else "—", totalMakes.toString() + " / " + totalAttempts + " made", Modifier.weight(1f))
+                StatCard("ATTEMPTS", totalAttempts.toString(), "Recorded shots", Modifier.weight(1f))
+            }
+        }
+        item {
+            DarkCard {
+                Text("SHOOTING TREND", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Pogoci i pokušaji po danu", color = Muted, fontSize = 11.sp)
+                Spacer(Modifier.height(12.dp))
+                val chartDates = if (period == "WEEK") dateKeys else dateKeys.filterIndexed { index, _ -> index % 3 == 0 || index == dateKeys.lastIndex }
+                chartDates.forEach { date ->
+                    val made = progressShots.sumOf { shot -> prefs.getString("makes|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0 }
+                    val tried = progressShots.sumOf { shot -> prefs.getString("attempts|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0 }
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(date.takeLast(5), color = Muted, fontSize = 10.sp, modifier = Modifier.width(43.dp))
+                        Box(Modifier.weight(1f).height(10.dp).background(Color(0xFF303239), RoundedCornerShape(6.dp))) {
+                            if (tried > 0) Box(Modifier.fillMaxWidth((made.toFloat() / tried).coerceIn(0f, 1f)).fillMaxHeight().background(Orange, RoundedCornerShape(6.dp)))
+                        }
+                        Text(made.toString() + "/" + tried, color = Color.White, fontSize = 10.sp, modifier = Modifier.width(48.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                    }
+                }
+                Text("Traka prikazuje procenat uspešnosti; brojke desno su pogoci/pokušaji.", color = Muted, fontSize = 10.sp)
+            }
+        }
+        item {
+            DarkCard {
+                Text("SHOOTING BY MOVE", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                progressShots.forEach { shot ->
+                    val pair = shotTotals[shot.id] ?: (0 to 0)
+                    val percent = if (pair.second > 0) pair.first * 100f / pair.second else 0f
+                    Column(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(shot.label, color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            Text(if (pair.second > 0) "%.1f%%".format(percent) else "—", color = Orange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(Modifier.height(5.dp))
+                        LinearProgressIndicator(progress = { (percent / 100f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(6.dp), color = Orange, trackColor = Color(0xFF303239))
+                        Text(pair.first.toString() + " pogodaka od " + pair.second + " pokušaja", color = Muted, fontSize = 10.sp)
+                    }
+                }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                StatCard("FINISHING", finishChecks.toString(), "Exercises checked", Modifier.weight(1f))
+                StatCard("BALL HANDLING", handleChecks.toString(), "Exercises checked", Modifier.weight(1f))
+            }
+        }
+        item {
+            DarkCard {
+                Text("LATEST READINESS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                if (latestReadinessDate != null && latestEnergy >= 0 && latestSoreness >= 0) {
+                    Text(latestReadinessDate, color = Muted, fontSize = 11.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Energy: " + latestEnergy + "/5     Muscle tightness: " + latestSoreness + "/5", color = Orange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                } else {
+                    Text("Još nema sačuvanih provera spremnosti. Unesi dnevni check-in u AI Coach delu.", color = Muted, fontSize = 11.sp)
+                }
+            }
+        }
+        item { Text("TRAINING HISTORY", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp) }
+        if (historyDates.isEmpty()) {
+            item { Text("Još nema zabeleženih rezultata. Kada sačuvaš trening ili uneseš šuteve, pojaviće se ovde.", color = Muted, fontSize = 12.sp) }
+        } else {
+            items(historyDates.size) { index ->
+                val date = historyDates[index]
+                val donePlans = listOf("shooting", "finishing", "handle").filter { prefs.getBoolean("done|" + date + "|" + it, false) }
+                val made = progressShots.sumOf { shot -> prefs.getString("makes|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0 }
+                val tried = progressShots.sumOf { shot -> prefs.getString("attempts|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0 }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { selectedDate = if (selectedDate == date) null else date },
+                    colors = CardDefaults.cardColors(containerColor = if (selectedDate == date) Color(0xFF30251F) else SurfaceDark),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Column(Modifier.padding(13.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(date, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Text(donePlans.size.toString() + " completed", color = Orange, fontSize = 11.sp)
+                            Icon(Icons.Default.ExpandMore, contentDescription = null, tint = Muted)
+                        }
+                        Text("Shooting: " + made + " / " + tried, color = Muted, fontSize = 11.sp)
+                        if (selectedDate == date) {
+                            Spacer(Modifier.height(8.dp))
+                            Text("SESSION DETAILS", color = Orange, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            listOf("shooting" to "Shooting", "finishing" to "Finishing", "handle" to "Ball handling").forEach { pair ->
+                                val done = prefs.getBoolean("done|" + date + "|" + pair.first, false)
+                                Text(pair.second + ": " + if (done) "Completed" else "Not completed", color = if (done) Orange else Muted, fontSize = 11.sp)
+                            }
+                            progressShots.forEach { shot ->
+                                val m = prefs.getString("makes|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0
+                                val a = prefs.getString("attempts|" + date + "|shooting|" + shot.id, "")?.toIntOrNull() ?: 0
+                                Text(shot.label + ": " + m + " / " + a, color = Muted, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Text("Statistika prikazuje samo podatke koje uneseš u Workout. Prazan rezultat znači da još nema unosa — ne računa se kao nula-procenat.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+        }
+    }
+}
+
 
 @Composable
 private fun SimpleScreen(title: String, subtitle: String, modifier: Modifier = Modifier) {
