@@ -606,6 +606,9 @@ private data class CoachMessage(val text: String, val fromCoach: Boolean)
 
 @Composable
 private fun AICoachScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val coachPrefs = remember { context.getSharedPreferences("elite_shot_lab_training", android.content.Context.MODE_PRIVATE) }
+    val today = todayKey()
     var messages by remember { mutableStateOf(listOf(CoachMessage("Ćao! Ovde je tvoj offline košarkaški trener. Dobijaš strukturisane savete za šut, dribling, završavanje i Game IQ bez interneta. Ovo je lokalni sistem pravila, a ne generativni cloud AI.", true))) }
     var input by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("SHOOTING") }
@@ -658,6 +661,14 @@ private fun AICoachScreen(modifier: Modifier = Modifier) {
                 Slider(value=energy,onValueChange={energy=it},valueRange=1f..5f,steps=3,colors=SliderDefaults.colors(thumbColor=Orange,activeTrackColor=Orange))
                 Text("MIŠIĆNA ZATEGNUTOST • ${soreness.toInt()}/5",color=Orange,fontSize=11.sp,fontWeight=FontWeight.Bold)
                 Slider(value=soreness,onValueChange={soreness=it},valueRange=1f..5f,steps=3,colors=SliderDefaults.colors(thumbColor=Orange,activeTrackColor=Orange))
+                Button(onClick={
+                    coachPrefs.edit()
+                        .putInt("readiness|" + today + "|energy", energy.toInt())
+                        .putInt("readiness|" + today + "|soreness", soreness.toInt())
+                        .apply()
+                }, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(containerColor=Orange,contentColor=Color.Black)) {
+                    Text("SAVE READINESS")
+                }
                 Text(if(energy<=2f || soreness>=4f) "Prednost daj oporavku i razgovaraj sa trenerom o opterećenju." else "Prati osećaj i dogovori dodatni rad sa trenerom.",color=Muted,fontSize=12.sp)
             }
         }
@@ -679,7 +690,13 @@ private fun AICoachScreen(modifier: Modifier = Modifier) {
                 if(input.isNotBlank()) {
                     val question = input.trim()
                     val q = question.lowercase()
-                    val answer = when {
+                    val shotIds = listOf("back", "front", "middle", "form")
+                    val madeToday = shotIds.sumOf { coachPrefs.getString("makes|" + today + "|shooting|" + it, "")?.toIntOrNull() ?: 0 }
+                    val attemptsToday = shotIds.sumOf { coachPrefs.getString("attempts|" + today + "|shooting|" + it, "")?.toIntOrNull() ?: 0 }
+                    val shotSummary = if (attemptsToday > 0) " Tvoj današnji unos: $madeToday/$attemptsToday pogodaka." else " Još nema današnjeg unosa šuteva u Workout delu."
+                    val answer = if (energy <= 2f || soreness >= 4f) {
+                        "Danas je prioritet oporavak. Energija: ${energy.toInt()}/5, zategnutost: ${soreness.toInt()}/5. Nemoj dodavati naporan rad preko svoja dva individualna treninga; reci treneru kako se osećaš i dogovorite opterećenje." + shotSummary
+                    } else when {
                         listOf("procenat", "šut", "sut", "izbačaj", "izbacaj").any { q.contains(it) } || topic == "SHOOTING" ->
                             "OFFLINE SAVET ZA ŠUT\nBeleži pogotke i pokušaje odvojeno za svaku vrstu šuta. Radi na balansu pri zaustavljanju, ponovljivom ritmu i istom završetku izbačaja. Upoređuj više treninga, ne samo jedan dan. " + if (q.contains("procenat") || q.contains("statistik")) "U Progress delu možeš da pratiš procenat i trend." else "Probaj da prepoznaš da li promašaji dolaze iz balansa, umora ili brzine izbačaja."
                         listOf("dribling", "lopta", "crossover").any { q.contains(it) } || topic == "HANDLING" ->
@@ -688,7 +705,7 @@ private fun AICoachScreen(modifier: Modifier = Modifier) {
                             "OFFLINE SAVET ZA ZAVRŠAVANJE\nVežbaj obe strane i obe ruke uz kontrolisane korake i stabilno doskakanje. Prvo kvalitet tehnike, pa tek onda brzina. Ne forsiraj kontakt."
                         else ->
                             "OFFLINE GAME IQ SAVET\nPre prijema lopte skeniraj teren: položaj čuvara, pomoć odbrane i slobodan prostor. Kod pick-and-roll situacije prvo pročitaj reakciju odbrane, pa odluči između dodavanja, prodora ili šuta. Zapiši jednu situaciju koju želiš da prođeš sa trenerom."
-                    }
+                    } + shotSummary
                     messages=messages+CoachMessage(question,false)+CoachMessage(answer,true)
                     input=""
                 }
