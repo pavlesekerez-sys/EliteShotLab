@@ -24,7 +24,7 @@ private val SurfaceDark = Color(0xFF1B1D22)
 private val Muted = Color(0xFF9A9DA6)
 
 private enum class AppTab(val label: String) {
-    HOME("Home"), TRAINING("Training"), CALENDAR("Calendar"),
+    HOME("Home"), TRAINING("Workout"), CALENDAR("Calendar"),
     AI_COACH("AI Coach"), PROGRESS("Progress"), SETTINGS("Settings")
 }
 
@@ -89,7 +89,7 @@ private fun EliteShotLabApp() {
         ) { padding ->
             when (selectedTab) {
                 AppTab.HOME -> HomeScreen(Modifier.padding(padding))
-                AppTab.TRAINING -> SimpleScreen("TRAINING", "Your workouts start here.", Modifier.padding(padding))
+                AppTab.TRAINING -> WorkoutScreen(Modifier.padding(padding))
                 AppTab.CALENDAR -> SimpleScreen("CALENDAR", "Your 16-week training calendar.", Modifier.padding(padding))
                 AppTab.AI_COACH -> SimpleScreen("AI COACH", "Your personal basketball development coach.", Modifier.padding(padding))
                 AppTab.PROGRESS -> SimpleScreen("PROGRESS", "Track shots, workouts and improvement.", Modifier.padding(padding))
@@ -191,6 +191,178 @@ private fun PhaseRow(number: String, title: String, weeks: String, active: Boole
         }
         Spacer(Modifier.weight(1f))
         if (active) Text("CURRENT", color = Orange, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+
+private data class WorkoutExercise(
+    val name: String,
+    val target: String,
+    val coachingTip: String
+)
+
+private data class WorkoutPlan(
+    val title: String,
+    val duration: String,
+    val focus: String,
+    val exercises: List<WorkoutExercise>
+)
+
+@Composable
+private fun WorkoutScreen(modifier: Modifier = Modifier) {
+    val workouts = listOf(
+        WorkoutPlan(
+            "Pull-up Mid-Range", "45–60 MIN", "Footwork • Balance • Shot consistency",
+            listOf(
+                WorkoutExercise("Dynamic warm-up", "5–7 min", "Move smoothly and prepare your ankles, hips and shoulders."),
+                WorkoutExercise("Form shooting", "3 × 10 makes", "Start close to the basket; keep your elbow and follow-through consistent."),
+                WorkoutExercise("1–2 pull-up footwork", "4 × 5 each side", "Practice stopping under control before every shot."),
+                WorkoutExercise("Dribble into pull-up", "5 × 5 each side", "Stay balanced and land under control. Focus on quality, not speed."),
+                WorkoutExercise("Free throws", "2 × 10 shots", "Use the same routine before every attempt.")
+            )
+        ),
+        WorkoutPlan(
+            "Ball Handling", "25–35 MIN", "Control • Both hands • Change of pace",
+            listOf(
+                WorkoutExercise("Stationary pound dribbles", "3 × 30 sec each hand", "Keep your eyes up and the ball below your waist."),
+                WorkoutExercise("Crossovers", "3 × 20 reps", "Move the ball quickly while keeping your body balanced."),
+                WorkoutExercise("Between-the-legs", "3 × 15 reps", "Stay low and make each transfer controlled."),
+                WorkoutExercise("Moving change of pace", "4 × down and back", "Change speed after the move; keep control of the ball."),
+                WorkoutExercise("Weak-hand control", "3 × 45 sec", "Give your weaker hand focused, controlled repetitions.")
+            )
+        ),
+        WorkoutPlan(
+            "Finishing at Rim", "30–40 MIN", "Touch • Both sides • Body control",
+            listOf(
+                WorkoutExercise("Mikan drill", "3 × 10 makes", "Alternate hands and finish softly off the glass."),
+                WorkoutExercise("Right-hand layups", "3 × 8 makes", "Take a balanced approach and use the correct footwork."),
+                WorkoutExercise("Left-hand layups", "3 × 8 makes", "Work patiently on your weaker side."),
+                WorkoutExercise("Two-foot power finishes", "3 × 6 makes", "Gather securely, jump under control and finish high."),
+                WorkoutExercise("Free throws", "2 × 10 shots", "Reset your routine and breathing between attempts.")
+            )
+        )
+    )
+    var selectedWorkoutIndex by remember { mutableIntStateOf(0) }
+    val workout = workouts[selectedWorkoutIndex]
+    val completed = remember(selectedWorkoutIndex) {
+        mutableStateListOf<Boolean>().apply {
+            repeat(workout.exercises.size) { add(false) }
+        }
+    }
+    val completedCount = completed.count { it }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize().padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(top = 24.dp, bottom = 28.dp)
+    ) {
+        item {
+            Text("ELITE SHOT LAB", color = Orange, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+            Spacer(Modifier.height(8.dp))
+            Text("YOUR WORKOUT", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Black)
+            Spacer(Modifier.height(6.dp))
+            Text("Choose a session and tick off each exercise as you complete it.", color = Muted, fontSize = 13.sp)
+        }
+        item {
+            SectionTitle("CHOOSE YOUR SESSION")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf("SHOOTING", "HANDLING", "FINISHING").forEachIndexed { index, label ->
+                    FilterChip(
+                        selected = selectedWorkoutIndex == index,
+                        onClick = { selectedWorkoutIndex = index },
+                        label = { Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF392416),
+                            selectedLabelColor = Orange,
+                            labelColor = Muted
+                        )
+                    )
+                }
+            }
+        }
+        item {
+            DarkCard {
+                Text(workout.title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(5.dp))
+                Text(workout.focus, color = Muted, fontSize = 12.sp)
+                Spacer(Modifier.height(14.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(workout.duration, color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Text("$completedCount / ${workout.exercises.size} COMPLETED", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    Modifier.fillMaxWidth().height(7.dp)
+                        .background(Color(0xFF303239), RoundedCornerShape(8.dp))
+                ) {
+                    Box(
+                        Modifier.fillMaxWidth(
+                            if (workout.exercises.isEmpty()) 0f else completedCount.toFloat() / workout.exercises.size
+                        ).fillMaxHeight()
+                            .background(Orange, RoundedCornerShape(8.dp))
+                    )
+                }
+                if (completedCount == workout.exercises.size) {
+                    Spacer(Modifier.height(12.dp))
+                    Text("SESSION COMPLETE — GREAT WORK!", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        item { SectionTitle("EXERCISES") }
+        items(workout.exercises.size) { index ->
+            val exercise = workout.exercises[index]
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (completed[index]) Color(0xFF24251F) else SurfaceDark
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = completed[index],
+                        onCheckedChange = { completed[index] = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Orange,
+                            uncheckedColor = Muted,
+                            checkmarkColor = Color.Black
+                        )
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            exercise.name,
+                            color = if (completed[index]) Muted else Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(exercise.target, color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(5.dp))
+                        Text(exercise.coachingTip, color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
+                    }
+                }
+            }
+        }
+        item {
+            OutlinedButton(
+                onClick = { for (i in completed.indices) completed[i] = false },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Orange)
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("RESET SESSION")
+            }
+        }
     }
 }
 
