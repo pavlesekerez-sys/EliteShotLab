@@ -95,7 +95,7 @@ private fun EliteShotLabApp() {
                 AppTab.HOME -> HomeScreen(Modifier.padding(padding))
                 AppTab.TRAINING -> WorkoutScreen(Modifier.padding(padding))
                 AppTab.CALENDAR -> CalendarScreen(Modifier.padding(padding))
-                AppTab.AI_COACH -> SimpleScreen("AI COACH", "Your personal basketball development coach.", Modifier.padding(padding))
+                AppTab.AI_COACH -> AICoachScreen(Modifier.padding(padding))
                 AppTab.PROGRESS -> SimpleScreen("PROGRESS", "Track shots, workouts and improvement.", Modifier.padding(padding))
                 AppTab.SETTINGS -> SimpleScreen("SETTINGS", "Your profile and app preferences.", Modifier.padding(padding))
             }
@@ -411,5 +411,93 @@ private fun SimpleScreen(title: String, subtitle: String, modifier: Modifier = M
         Text(subtitle, color = Muted, fontSize = 15.sp)
         Spacer(Modifier.height(20.dp))
         Text("COMING IN THE NEXT BUILD", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+
+private data class CoachMessage(val text: String, val fromCoach: Boolean)
+
+@Composable
+private fun AICoachScreen(modifier: Modifier = Modifier) {
+    var messages by remember { mutableStateOf(listOf(CoachMessage("Ćao! Ovde ćemo raditi na šutu, driblingu, završavanju i Game IQ-u. Pravi AI odgovor zahteva bezbedno povezivanje AI servisa — to još nije uključeno u ovu verziju.", true))) }
+    var input by remember { mutableStateOf("") }
+    var topic by remember { mutableStateOf("SHOOTING") }
+    var energy by remember { mutableFloatStateOf(3f) }
+    var soreness by remember { mutableFloatStateOf(2f) }
+    val prompts = when(topic) {
+        "SHOOTING" -> listOf("Kako da budem stabilniji na pull-up šutu?", "Kako da popravim izbačaj pod pritiskom?")
+        "HANDLING" -> listOf("Kako da napravim više prostora odbrambenom igraču?", "Kako da čitam reakciju odbrane?")
+        "FINISHING" -> listOf("Kako da završavam uz dobar balans?", "Kada da koristim reverse završnicu?")
+        else -> listOf("Kako da prepoznam pomoć u odbrani?", "Kako da čitam pick-and-roll?")
+    }
+    LazyColumn(modifier.fillMaxSize().padding(horizontal=16.dp), verticalArrangement=Arrangement.spacedBy(12.dp), contentPadding=PaddingValues(top=20.dp,bottom=24.dp)) {
+        item {
+            Text("ELITE SHOT LAB",color=Orange,fontSize=12.sp,fontWeight=FontWeight.Bold,letterSpacing=2.sp)
+            Text("AI COACH",color=Color.White,fontSize=27.sp,fontWeight=FontWeight.Black)
+            Text("YOUR BASKETBALL DEVELOPMENT HUB",color=Muted,fontSize=10.sp)
+        }
+        item {
+            DarkCard {
+                Row(verticalAlignment=Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome,contentDescription=null,tint=Orange,modifier=Modifier.size(26.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text("PERSONAL BASKETBALL COACH",color=Color.White,fontWeight=FontWeight.Bold,fontSize=14.sp)
+                        Text("AI servis: potrebno povezivanje",color=Orange,fontSize=11.sp)
+                    }
+                }
+            }
+        }
+        item {
+            Text("CHOOSE YOUR FOCUS",color=Orange,fontSize=11.sp,fontWeight=FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                listOf("SHOOTING","HANDLING","FINISHING","GAME IQ").forEach { t ->
+                    FilterChip(selected=topic==t,onClick={topic=t},label={Text(t,fontSize=9.sp)},colors=FilterChipDefaults.filterChipColors(selectedContainerColor=Color(0xFF392416),selectedLabelColor=Orange,labelColor=Muted))
+                }
+            }
+        }
+        item {
+            DarkCard {
+                Text("QUESTIONS TO EXPLORE",color=Color.White,fontWeight=FontWeight.Bold,fontSize=14.sp)
+                prompts.forEach { p -> OutlinedButton(onClick={input=p},modifier=Modifier.fillMaxWidth().padding(top=4.dp),colors=ButtonDefaults.outlinedButtonColors(contentColor=Color.White)) { Text(p,fontSize=12.sp) } }
+            }
+        }
+        item {
+            DarkCard {
+                Text("DAILY READINESS CHECK",color=Color.White,fontWeight=FontWeight.Bold,fontSize=14.sp)
+                Text("Uskladi dodatni rad sa svoja dva individualna treninga i oporavkom.",color=Muted,fontSize=12.sp)
+                Spacer(Modifier.height(10.dp))
+                Text("ENERGIJA • ${energy.toInt()}/5",color=Orange,fontSize=11.sp,fontWeight=FontWeight.Bold)
+                Slider(value=energy,onValueChange={energy=it},valueRange=1f..5f,steps=3,colors=SliderDefaults.colors(thumbColor=Orange,activeTrackColor=Orange))
+                Text("MIŠIĆNA ZATEGNUTOST • ${soreness.toInt()}/5",color=Orange,fontSize=11.sp,fontWeight=FontWeight.Bold)
+                Slider(value=soreness,onValueChange={soreness=it},valueRange=1f..5f,steps=3,colors=SliderDefaults.colors(thumbColor=Orange,activeTrackColor=Orange))
+                Text(if(energy<=2f || soreness>=4f) "Prednost daj oporavku i razgovaraj sa trenerom o opterećenju." else "Prati osećaj i dogovori dodatni rad sa trenerom.",color=Muted,fontSize=12.sp)
+            }
+        }
+        item { Text("COACH CHAT",color=Orange,fontSize=11.sp,fontWeight=FontWeight.Bold) }
+        items(messages.size) { i ->
+            val m=messages[i]
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=if(m.fromCoach) Arrangement.Start else Arrangement.End) {
+                Card(Modifier.fillMaxWidth(0.88f),colors=CardDefaults.cardColors(containerColor=if(m.fromCoach) SurfaceDark else Color(0xFF392416)),shape=RoundedCornerShape(16.dp)) {
+                    Column(Modifier.padding(13.dp)) {
+                        Text(if(m.fromCoach) "AI COACH" else "YOU",color=Orange,fontSize=9.sp,fontWeight=FontWeight.Bold)
+                        Text(m.text,color=Color.White,fontSize=13.sp,lineHeight=19.sp)
+                    }
+                }
+            }
+        }
+        item {
+            OutlinedTextField(value=input,onValueChange={input=it},modifier=Modifier.fillMaxWidth(),placeholder={Text("Napiši pitanje za AI Coach...")},minLines=2,colors=OutlinedTextFieldDefaults.colors(focusedBorderColor=Orange))
+            Button(onClick={
+                if(input.isNotBlank()) {
+                    messages=messages+CoachMessage(input.trim(),false)+CoachMessage("Poruka je zabeležena u ovom prikazu. Za stvaran odgovor potrebno je povezati AI servis preko bezbednog servera; nećemo stavljati tajni API ključ u APK.",true)
+                    input=""
+                }
+            },modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Orange,contentColor=Color.Black)) {
+                Icon(Icons.Default.Send,contentDescription=null)
+                Spacer(Modifier.width(8.dp))
+                Text("SEND")
+            }
+        }
     }
 }
