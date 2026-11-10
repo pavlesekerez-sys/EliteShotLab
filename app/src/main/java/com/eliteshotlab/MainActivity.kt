@@ -606,7 +606,7 @@ private data class CoachMessage(val text: String, val fromCoach: Boolean)
 
 @Composable
 private fun AICoachScreen(modifier: Modifier = Modifier) {
-    var messages by remember { mutableStateOf(listOf(CoachMessage("Ćao! Ovde ćemo raditi na šutu, driblingu, završavanju i Game IQ-u. Pravi AI odgovor zahteva bezbedno povezivanje AI servisa — to još nije uključeno u ovu verziju.", true))) }
+    var messages by remember { mutableStateOf(listOf(CoachMessage("Ćao! Ovde je tvoj offline košarkaški trener. Dobijaš strukturisane savete za šut, dribling, završavanje i Game IQ bez interneta. Ovo je lokalni sistem pravila, a ne generativni cloud AI.", true))) }
     var input by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("SHOOTING") }
     var energy by remember { mutableFloatStateOf(3f) }
@@ -630,7 +630,7 @@ private fun AICoachScreen(modifier: Modifier = Modifier) {
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text("PERSONAL BASKETBALL COACH",color=Color.White,fontWeight=FontWeight.Bold,fontSize=14.sp)
-                        Text("AI servis: potrebno povezivanje",color=Orange,fontSize=11.sp)
+                        Text("OFFLINE COACH • radi bez interneta",color=Orange,fontSize=11.sp)
                     }
                 }
             }
@@ -677,7 +677,19 @@ private fun AICoachScreen(modifier: Modifier = Modifier) {
             OutlinedTextField(value=input,onValueChange={input=it},modifier=Modifier.fillMaxWidth(),placeholder={Text("Napiši pitanje za AI Coach...")},minLines=2,colors=OutlinedTextFieldDefaults.colors(focusedBorderColor=Orange))
             Button(onClick={
                 if(input.isNotBlank()) {
-                    messages=messages+CoachMessage(input.trim(),false)+CoachMessage("Poruka je zabeležena u ovom prikazu. Za stvaran odgovor potrebno je povezati AI servis preko bezbednog servera; nećemo stavljati tajni API ključ u APK.",true)
+                    val question = input.trim()
+                    val q = question.lowercase()
+                    val answer = when {
+                        listOf("procenat", "šut", "sut", "izbačaj", "izbacaj").any { q.contains(it) } || topic == "SHOOTING" ->
+                            "OFFLINE SAVET ZA ŠUT\nBeleži pogotke i pokušaje odvojeno za svaku vrstu šuta. Radi na balansu pri zaustavljanju, ponovljivom ritmu i istom završetku izbačaja. Upoređuj više treninga, ne samo jedan dan. " + if (q.contains("procenat") || q.contains("statistik")) "U Progress delu možeš da pratiš procenat i trend." else "Probaj da prepoznaš da li promašaji dolaze iz balansa, umora ili brzine izbačaja."
+                        listOf("dribling", "lopta", "crossover").any { q.contains(it) } || topic == "HANDLING" ->
+                            "OFFLINE SAVET ZA DRIBLING\nRadi kontrolisano obe ruke, glavu drži podignutu i ubrzaj tek nakon promene pravca. U igri čitaj položaj stopala i kukova čuvara; izaberi jednostavan potez koji odgovara njegovoj reakciji."
+                        listOf("završ", "polag", "reverse", "euro", "zicer").any { q.contains(it) } || topic == "FINISHING" ->
+                            "OFFLINE SAVET ZA ZAVRŠAVANJE\nVežbaj obe strane i obe ruke uz kontrolisane korake i stabilno doskakanje. Prvo kvalitet tehnike, pa tek onda brzina. Ne forsiraj kontakt."
+                        else ->
+                            "OFFLINE GAME IQ SAVET\nPre prijema lopte skeniraj teren: položaj čuvara, pomoć odbrane i slobodan prostor. Kod pick-and-roll situacije prvo pročitaj reakciju odbrane, pa odluči između dodavanja, prodora ili šuta. Zapiši jednu situaciju koju želiš da prođeš sa trenerom."
+                    }
+                    messages=messages+CoachMessage(question,false)+CoachMessage(answer,true)
                     input=""
                 }
             },modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Orange,contentColor=Color.Black)) {
